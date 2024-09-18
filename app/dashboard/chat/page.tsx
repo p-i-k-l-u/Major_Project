@@ -19,7 +19,7 @@
 //           method: 'POST',
 //           headers: {
 //             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`, // Use API key from env file
+//             'Authorization': Bearer ${process.env.NEXT_PUBLIC_API_KEY}, // Use API key from env file
 //           },
 //           body: JSON.stringify({ message: message }),
 //         });
@@ -90,8 +90,8 @@
 //               onChange={(e) => setMessage(e.target.value)}
 //               className={styles.input}
 //             />
-//             <button 
-//               onClick={sendMessage} 
+//             <button
+//               onClick={sendMessage}
 //               className={styles.button}
 //               disabled={loading} // Disable button while loading
 //             >
@@ -106,18 +106,7 @@
 //   );
 // }
 
-
-
-
-
-
-
 // -----------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
 
 "use client";
 
@@ -137,50 +126,39 @@ export default function ChatSection() {
     if (message.trim()) {
       setLoading(true);
       setError(null);
-  
+
       try {
-        const response = await fetch('/api/send-message', {
-          method: 'POST',
+        const response = await fetch("/api/send-message", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ message }),
         });
-  
+
         if (!response.ok) {
-          throw new Error('Failed to send message');
+          throw new Error("Failed to send message");
         }
-  
+
         const data = await response.json();
-        const parsedText = parseStream(data.response);
-  
-        if (parsedText) {
-          setMessages((prevMessages) => [...prevMessages, `**You:** ${message}`, `**AI:** ${parsedText}`]);
+
+        if (data.response) {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            `**You:** ${message}`,
+            `**AI:** ${data.response}`,
+          ]);
+        } else {
+          throw new Error("Invalid response from API");
         }
-  
+
         setMessage(""); // Clear input
       } catch (error) {
-        setError('An error occurred while sending the message.');
+        setError("An error occurred while sending the message.");
+        console.error(error);
       } finally {
         setLoading(false);
       }
-    }
-  };
-  
-  
-
-  const parseStream = (text: string) => {
-    try {
-      const lines = text.split("\n").filter((line) => line.trim() !== "");
-      let result = "";
-      lines.forEach((line) => {
-        const content = JSON.parse(line.replace(/^data: /, "")).choices[0]?.delta?.content || "";
-        result += content;
-      });
-      return result;
-    } catch (error) {
-      console.error("Failed to parse stream:", error);
-      return null;
     }
   };
 
@@ -230,13 +208,13 @@ export default function ChatSection() {
               onChange={(e) => setMessage(e.target.value)}
               className={styles.input}
             />
-            <button 
-              onClick={sendMessage} 
+            <button
+              onClick={sendMessage}
               className={styles.button}
               disabled={loading}
             >
               <AiOutlineSend size={20} />
-              {loading ? 'Sending...' : 'Send'}
+              {loading ? "Sending..." : "Send"}
             </button>
           </div>
           {error && <p className={styles.error}>{error}</p>}

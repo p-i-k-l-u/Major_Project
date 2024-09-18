@@ -42,41 +42,34 @@
 // ---------------------------------------------------------------------------------------
 
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-type ApiResponse = {
-  response?: any;
-  error?: string;
-};
+export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   try {
     const { message } = await req.json();
-
-    if (typeof message !== 'string' || message.trim() === '') {
-      return NextResponse.json({ error: 'Invalid message' }, { status: 400 });
+    if (typeof message !== "string" || message.trim() === "") {
+      return NextResponse.json({ error: "Invalid message" }, { status: 400 });
     }
 
-    const response = await fetch('https://api.gemini.com/v1/models/gemini-1.5/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`, // Using the API key from the environment variable
-      },
-      body: JSON.stringify({ message }),
-    });
+    const genAI = new GoogleGenerativeAI(process.env.NEXT_GEMINI_API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    if (!response.ok) {
-      console.log(`Error: ${response.status} - ${response.statusText}`);
-      throw new Error('Failed to fetch data');
-    }
+    const result = await model.generateContent(message);
+    const response = result.response;
+    const text = response.text();
 
-    const data = await response.json();
-    return NextResponse.json({ response: data }, { status: 200 });
+    return NextResponse.json({ response: text }, { status: 200 });
   } catch (error) {
+    console.error("Error in /api/send-message:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
-  }
+      {
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      },
+      { status: 500 }
+    );
+  }
 }
